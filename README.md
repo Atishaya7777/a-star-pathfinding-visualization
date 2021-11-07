@@ -1,1 +1,1 @@
-"# a--pathfinding-visualization" 
+"# A* pathfinding algorithm visualization" 
