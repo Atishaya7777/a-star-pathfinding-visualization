@@ -4,7 +4,7 @@ from queue import PriorityQueue
 
 WIDTH = 800
 # Create a width * width display window
-WIN = pygame.display.set_mode((WIDTH, WIDTH))
+WINDOW = pygame.display.set_mode((WIDTH, WIDTH))
 pygame.display.set_caption("A* Path finding algorithm visualized")
 
 # Colors
@@ -77,8 +77,19 @@ class Node:
         pygame.draw.rect(window, self.color, (self.x, self.y, self.width, self.width))
 
     def update_neighbours(self, grid):
-        # comeback to this later as this is a big function
-        pass
+        self.neighbours = []
+        # Down a row
+        if self.row < self.total_rows - 1 and not grid[self.row + 1][self.col].is_barrier():
+            self.neighbours.append(grid[self.row + 1][self.col])
+        # Up a row
+        if self.row > 0 and not grid[self.row - 1][self.col].is_barrier():
+            self.neighbours.append(grid[self.row - 1][self.col])
+        # Left Column
+        if self.col < self.total_rows - 1 and not grid[self.row][self.col - 1].is_barrier():
+            self.neighbours.append(grid[self.row][self.col - 1])
+        # Right Column
+        if self.col > 0 and not grid[self.row][self.col + 1].is_barrier():
+            self.neighbours.append(grid[self.row][self.col + 1])
 
     # Less than == lt
     def __lt__(self, other):
@@ -127,6 +138,30 @@ def get_clicked_pos(position, rows, width):
     row = y // gap
     col = x // gap
 
+    return row, col
+
+def pathfinding_algorithm(draw, grid, start, end):
+    count = 0
+
+    open_set = PriorityQueue()
+
+    came_from = {}
+    g_score = {node: float("inf") for row in grid for node in row}
+    g_score[start] = 0 
+
+    f_score = {node: float("inf") for row in grid for node in row}
+    f_score[start] = h_cost(start.get_pos(), end.get_pos())
+
+    open_set_hash = {start}
+
+    while not open_set.empty():
+        for event in pygame.event.get():
+            if event.type() == pygame.QUIT:
+                pygame.quit()  
+
+    open_set = PriorityQueue()
+    open_set.put((0, count, start))
+
 
 def main(window, width):
     # Try changing these static values to dynamic later on
@@ -140,6 +175,7 @@ def main(window, width):
     started = False
     
     while run:
+        draw(window, grid, ROWS, width)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -153,6 +189,35 @@ def main(window, width):
                 row, col = get_clicked_pos(position, ROWS, WIDTH)
                 node = grid[row][col]
 
-                
+                if not start and node != end:
+                    start = node
+                    start.make_start()
+                elif not end and node != start:
+                    end = node
+                    end.make_end()
+
+                elif node != end and node != start:
+                    node.make_barrier()
+
+            elif pygame.mouse.get_pressed()[2]:
+                position = pygame.mouse.get_pos()
+                row, col = get_clicked_pos(position, ROWS, WIDTH)
+                node = grid[row][col]
+                node.make_reset()
+
+                if node == start:
+                    start = None
+                elif node == end:
+                    end = None
+            
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE and not started:
+                    for row in grid:
+                        for node in row:
+                            node.update_neighbours()
+                    # lambda functions are kinda like those arrow key functions in js, anonymous functions per se. Here, the draw() function is passed as an argument along with grid, start, and end to the pathfinding_algorithm function
+                    pathfinding_algorithm(lambda: draw(window, grid, ROWS, width), grid, start, end)
 
     pygame.quit()
+
+main(WINDOW, WIDTH)
